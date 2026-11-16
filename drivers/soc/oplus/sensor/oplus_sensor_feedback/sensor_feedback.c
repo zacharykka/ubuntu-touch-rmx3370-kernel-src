@@ -549,7 +549,8 @@ static int read_data_from_share_mem(struct sensor_fb_cxt *sensor_fb_cxt)
 		return -2;
 	}
 
-	memcpy((void *)&sensor_fb_cxt->fb_smem, (void *)fb_event, smem_size);
+	memcpy((void *)&sensor_fb_cxt->fb_smem, (void *)fb_event,
+	       min(smem_size, sizeof(sensor_fb_cxt->fb_smem)));
 	return 0;
 }
 
