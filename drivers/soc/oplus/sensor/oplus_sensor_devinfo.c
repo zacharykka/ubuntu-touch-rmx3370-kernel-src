@@ -1518,6 +1518,12 @@ static int oplus_devinfo_probe(struct platform_device *pdev)
 		return -EPROBE_DEFER; /*return -EPROBE_DEFER if smem not ready*/
 	}
 
+	if (smem_size < sizeof(struct sensor_info)) {
+		pr_err("%s: SMEM_SENSOR is %zu bytes but struct sensor_info needs %zu, not touching it\n",
+		       __func__, smem_size, sizeof(struct sensor_info));
+		return -EINVAL;
+	}
+
 	chip = (struct sensor_info *)(smem_addr);
 
 	memset(chip, 0, sizeof(struct sensor_info));
