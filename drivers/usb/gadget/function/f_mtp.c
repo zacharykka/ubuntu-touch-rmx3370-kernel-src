@@ -390,6 +390,7 @@ struct mtp_instance {
 	struct usb_function_instance func_inst;
 	const char *name;
 	struct mtp_dev *dev;
+	bool owns_dev;	/* created _mtp_dev (MTP); PTP instances only borrow it */
 	char mtp_ext_compat_id[16];
 	struct usb_os_desc mtp_os_desc;
 };
@@ -1743,6 +1744,11 @@ static int __mtp_setup(struct mtp_instance *fi_mtp)
 	struct mtp_dev *dev;
 	int ret;
 
+	if (_mtp_dev) {
+		pr_err("%s: an MTP function instance already exists\n", __func__);
+		return -EBUSY;
+	}
+
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
 
 	if (fi_mtp != NULL)
@@ -1862,7 +1868,8 @@ static void mtp_free_inst(struct usb_function_instance *fi)
 
 	fi_mtp = to_fi_mtp(fi);
 	kfree(fi_mtp->name);
-	mtp_cleanup();
+	if (fi_mtp->owns_dev)
+		mtp_cleanup();
 	kfree(fi_mtp);
 }
 
@@ -1891,15 +1898,23 @@ struct usb_function_instance *alloc_inst_mtp_ptp(bool mtp_config)
 			pr_err("Error setting MTP\n");
 			return ERR_PTR(ret);
 		}
-	} else
+	} else {
+		if (!_mtp_dev) {
+			kfree(fi_mtp);
+			pr_err("Error: create the MTP function before PTP\n");
+			return ERR_PTR(-EINVAL);
+		}
 		fi_mtp->dev = _mtp_dev;
+	}
 
 	config_group_init_type_name(&fi_mtp->func_inst.group,
 					"", &mtp_func_type);
 	usb_os_desc_prepare_interf_dir(&fi_mtp->func_inst.group, 1,
 					descs, names, THIS_MODULE);
 
-	mutex_init(&fi_mtp->dev->read_mutex);
+	if (mtp_config)
+		mutex_init(&fi_mtp->dev->read_mutex);
+	fi_mtp->owns_dev = mtp_config;
 
 	return  &fi_mtp->func_inst;
 }
