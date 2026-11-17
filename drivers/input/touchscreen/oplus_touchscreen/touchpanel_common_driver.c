@@ -6951,6 +6951,14 @@ static int init_input_device(struct touchpanel_data *ts)
 	}
 #endif
 	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
+	/*
+	 * WIDTH_MAJOR and PRESSURE are declared in absbit above and reported
+	 * from the IC's u8 major value, but were never given a range, so the
+	 * kernel exposed min == max == 0. libinput rejects such a device as a
+	 * kernel bug, which leaves the touchscreen unusable outside Android.
+	 */
+	input_set_abs_params(ts->input_dev, ABS_MT_WIDTH_MAJOR, 0, 255, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X, 0, ts->resolution_info.max_x - 1, 0, 0);
 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y, 0, ts->resolution_info.max_y - 1, 0, 0);
 	input_set_drvdata(ts->input_dev, ts);
