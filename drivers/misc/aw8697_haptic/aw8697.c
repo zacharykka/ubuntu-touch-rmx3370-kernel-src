@@ -13318,7 +13318,21 @@ static void aw8697_vibrator_work_routine(struct work_struct *work)
 			} else {
 				aw8697_haptic_ram_vbat_comp(aw8697, true);
 			}
-            aw8697_haptic_play_repeat_seq(aw8697, true);
+            if (aw8697->duration <= AW8697_HAPTIC_SHORT_TAP_MS) {
+                /* A short tap (touch feedback) must be a one-shot transient.
+                 * The looping sine cycle keeps buzzing for the whole duration
+                 * and is only cut by the timer, which is heard as a hum.
+                 * This mirrors the haptic_audio path: RAM_MODE, transient
+                 * waveform, loop 0 -> the sequence plays once and self-stops. */
+                aw8697_haptic_play_mode(aw8697, AW8697_HAPTIC_RAM_MODE);
+                aw8697_haptic_set_wav_seq(aw8697, 0x00,
+                              AW8697_WAVEFORM_INDEX_TRANSIENT);
+                aw8697_haptic_set_wav_seq(aw8697, 0x01, 0x00);
+                aw8697_haptic_set_wav_loop(aw8697, 0x00, 0x00);
+                aw8697_haptic_start(aw8697);
+            } else {
+                aw8697_haptic_play_repeat_seq(aw8697, true);
+            }
         } else if(aw8697->activate_mode == AW8697_HAPTIC_ACTIVATE_CONT_MODE) {
             aw8697_haptic_cont(aw8697);
         }

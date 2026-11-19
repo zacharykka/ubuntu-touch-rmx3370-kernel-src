@@ -623,6 +623,11 @@ struct aw8697_que_seq {
 #define AW8697_WAVEFORM_INDEX_OLD_STEADY           52
 #define AW8697_WAVEFORM_INDEX_LISTEN_POP           53
 
+/* Durations at or below this are treated as a tap (touch feedback) and played
+ * as a one-shot transient instead of the looping sine cycle, which otherwise
+ * hums for the whole duration. Touch sends 10 ms; real vibrations send 500 ms. */
+#define AW8697_HAPTIC_SHORT_TAP_MS                 50
+
 
 enum aw8697_haptic_custom_level {
     HAPTIC_CUSTOM_LEVEL_WEAK = 0,  // 3V
